@@ -2,10 +2,11 @@ import { takeLatest, put, all, call} from '@redux-saga/core/effects';
 
 import { UserActionTypes } from './user.types';
 
-import { signInSuccess, signInFailure, } from './user.actions';
+import { signInSuccess, signInFailure, signOutSuccess, signOutFailure} from './user.actions';
 
-import { auth, googleProvider, createUserProfileDocument } from '../../firebase/firebase.utils';
+import { auth, googleProvider, createUserProfileDocument, getCurrentUser } from '../../firebase/firebase.utils';
 
+//todo: Here we create a generator function where we catch the userAuth and the additional Data
 export function* getSnapshotFromUserAuth(userAuth, additionalData){
   try{
     const userRef = yield call(
@@ -38,13 +39,36 @@ export function* signInWithEmail({payload: {email, password}}){
   }
 }
 
+export function* isUserAuthenticated(){
+  try{
+    const userAuth = yield getCurrentUser();
+    if(!userAuth) return;
+    yield getSnapshotFromUserAuth(userAuth); 
+  }catch(error){
+    yield put(signInFailure(error));
+  }
+}
+
+//todo: This is for GOOGLE_SIGN_IN_START 
 export function* onGoogleSignInStart() {
   yield takeLatest(UserActionTypes.GOOGLE_SIGN_IN_START, signInWithGoogle);
 }
 
+//todo: This is for EMAIL_SIGN_IN_START
 export function* onEmailSignInStart(){
   yield takeLatest(UserActionTypes.EMAIL_SIGN_IN_START, signInWithEmail )
 }
+
+//todo: To authenticate the user session
+export function* onCheckUserSession(){
+  yield takeLatest(UserActionTypes.CHECK_USER_SESSION, isUserAuthenticated);
+}
+//todo: From User saga we export all the sagas and import this saga to the main saga.
 export function* userSagas(){
-  yield all([call(onGoogleSignInStart), call(onEmailSignInStart)])
+  yield all([
+    call(onGoogleSignInStart), 
+    call(onEmailSignInStart),
+    call(isUserAuthenticated),
+    // call()
+  ])
 }
