@@ -83,6 +83,6 @@ export function* userSagas(){
     call(onGoogleSignInStart), 
     call(onEmailSignInStart),
     call(onCheckUserSession),
-    // call()
+    call(onSignOutStart)
   ])
 }
